@@ -22,6 +22,138 @@
                 margin: 0;
                 overflow: hidden;
             }
+
+            /* Welcome / empty state, shown when the page opens without a content url */
+            #welcome {
+                position: fixed;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: radial-gradient(ellipse at 50% 32%, #171a23 0%, #0b0c10 72%);
+                color: #e8eaef;
+                font-family:
+                    system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+                z-index: 10;
+                overflow: auto;
+            }
+            #welcome[hidden] {
+                display: none;
+            }
+            .w-card {
+                width: min(92vw, 560px);
+                padding: 24px;
+                text-align: center;
+            }
+            .w-title {
+                font-size: 30px;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+            }
+            .w-title span {
+                color: #ff7a1a;
+            }
+            .w-sub {
+                margin-top: 6px;
+                font-size: 14px;
+                color: #9aa0ae;
+            }
+            .w-drop {
+                margin-top: 28px;
+                border: 2px dashed #3a4150;
+                border-radius: 14px;
+                padding: 32px 20px 26px;
+                transition:
+                    border-color 0.15s,
+                    background 0.15s,
+                    transform 0.15s;
+            }
+            .w-drop svg {
+                width: 42px;
+                height: 42px;
+                color: #6f788c;
+                margin-bottom: 10px;
+                transition: color 0.15s;
+            }
+            .w-drop-main {
+                font-size: 17px;
+                font-weight: 600;
+            }
+            .w-drop-sub {
+                margin-top: 6px;
+                font-size: 13px;
+                color: #9aa0ae;
+            }
+            body.dragging .w-drop {
+                border-color: #ff7a1a;
+                background: rgba(255, 122, 26, 0.07);
+                transform: scale(1.01);
+            }
+            body.dragging .w-drop svg {
+                color: #ff7a1a;
+            }
+            .w-formats {
+                margin-top: 26px;
+                display: grid;
+                gap: 10px;
+                text-align: left;
+            }
+            .w-fmt {
+                display: flex;
+                align-items: baseline;
+                gap: 12px;
+                font-size: 13px;
+                color: #b9bfcc;
+            }
+            .w-fmt code {
+                flex: 0 0 68px;
+                text-align: center;
+                font-family: ui-monospace, Consolas, monospace;
+                font-size: 12px;
+                color: #ffb066;
+                background: #1d222c;
+                border: 1px solid #2c3341;
+                border-radius: 6px;
+                padding: 3px 0;
+            }
+            .w-note {
+                margin-top: 26px;
+                font-size: 12px;
+                line-height: 1.8;
+                color: #767e8f;
+            }
+            .w-error {
+                margin-top: 14px;
+                font-size: 13px;
+                color: #ff7b7b;
+            }
+
+            /* drag-hover pill, over the welcome screen and a running scene alike */
+            #dragHint {
+                position: fixed;
+                left: 50%;
+                bottom: 36px;
+                transform: translateX(-50%) translateY(8px);
+                padding: 12px 22px;
+                border-radius: 999px;
+                background: #ff7a1a;
+                color: #17130e;
+                font-family:
+                    system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+                font-size: 14px;
+                font-weight: 600;
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+                opacity: 0;
+                pointer-events: none;
+                transition:
+                    opacity 0.12s,
+                    transform 0.12s;
+                z-index: 100;
+            }
+            body.dragging #dragHint {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
         </style>
 
         <!--
@@ -55,6 +187,9 @@
                 url.searchParams.get('collision') ?? url.searchParams.get('voxel') ?? bootstrap.collisionUrl ?? null;
             const settingsUrl = url.searchParams.get('settings') ?? bootstrap.settingsUrl ?? './settings.json';
             const contentUrl = url.searchParams.get('content') ?? bootstrap.contentUrl ?? './scene.compressed.ply';
+            // with no explicit content the welcome screen shows instead of a doomed fetch
+            // against the default scene name (which the Pages deployment does not carry)
+            const hasContent = url.searchParams.has('content') || !!bootstrap.contentUrl;
             // the bootstrap's alone: a url param would let a link run any wasm in this origin
             const gsafDecoderUrl = bootstrap.gsafDecoderUrl ?? null;
 
@@ -85,7 +220,7 @@
                 collisionUrl,
                 gsafDecoderUrl,
                 poster: posterUrl && createImage(posterUrl),
-                contents: prefetchContent ? fetch(contentUrl) : undefined,
+                contents: hasContent && prefetchContent ? fetch(contentUrl) : undefined,
                 ui: !url.searchParams.has('noui'),
                 reticle: url.searchParams.has('reticle'),
                 noanim: url.searchParams.has('noanim'),
@@ -119,31 +254,83 @@
 
             window.sse = {
                 options: sseOptions,
-                settings: bootstrap.settings ?? fetch(settingsUrl).then((response) => response.json())
+                settings: bootstrap.settings ?? fetch(settingsUrl).then((response) => response.json()),
+                hasContent
             };
         </script>
     </head>
     <body>
+        <!-- Welcome / empty state, shown when the page opens without a content url -->
+        <div id="welcome" hidden>
+            <div class="w-card">
+                <div class="w-title">4DGS <span>Viewer</span></div>
+                <div class="w-sub">4D 高斯模型查看器</div>
+                <div class="w-drop">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v12" />
+                        <path d="m7 10 5 5 5-5" />
+                        <path d="M4 19h16" />
+                    </svg>
+                    <div class="w-drop-main">将模型文件拖到这里</div>
+                    <div class="w-drop-sub">松开即播放 · 支持一次拖入多个文件或整个文件夹</div>
+                </div>
+                <div class="w-formats">
+                    <div class="w-fmt"><code>.ftgs</code><span>FreeTimeGS++ 4D 场景，单文件直接拖入</span></div>
+                    <div class="w-fmt"><code>.ftgsx</code><span>多段拼接清单，连同引用的段文件一起拖入</span></div>
+                    <div class="w-fmt"><code>.ply</code><span>TGH2 4D 场景（可带 scene.json）或静态 3DGS</span></div>
+                </div>
+                <div class="w-note">
+                    文件仅在你本机的内存中解析，不会上传到任何服务器<br />
+                    动画播放需要支持 WebGPU 的浏览器（新版 Chrome / Edge / Safari）
+                </div>
+                <div class="w-error" id="welcomeError" hidden></div>
+            </div>
+        </div>
+        <div id="dragHint">松开鼠标，加载模型</div>
+
         <!-- Application Script -->
         <script type="module">
             import { createViewer } from './index.js';
             import { initFtgsDrop } from './index.js';
 
-            const { options, settings } = window.sse;
+            const { options, settings, hasContent } = window.sse;
+
+            const welcome = document.getElementById('welcome');
+            const welcomeError = document.getElementById('welcomeError');
+            const showError = (msg) => {
+                welcomeError.textContent = msg ?? '';
+                welcomeError.hidden = !msg;
+            };
 
             // the viewer builds its own subtree (canvas, ui, icons) inside the container; the
-            // standalone document's container is the page itself
-            let current = createViewer({ container: document.body, settings, ...options });
+            // standalone document's container is the page itself. With no content to load the
+            // welcome screen stays up instead of a doomed default fetch.
+            let current = null;
+            if (hasContent) {
+                current = createViewer({ container: document.body, settings, ...options });
+                current.catch((err) => {
+                    console.error('[viewer] initial load failed:', err);
+                    welcome.hidden = false;
+                    showError('内容加载失败：' + (err?.message ?? String(err)));
+                });
+            } else {
+                welcome.hidden = false;
+            }
 
-            // dropping a .ftgs / .ftgsx (plus its segment files, or the whole folder)
-            // replaces the running scene: the manifest's segment urls are rewritten to
-            // object urls, so content plays from any local folder
+            // dropping a .ftgs / .ftgsx / .ply (plus its segment files, or the whole folder)
+            // replaces the running scene: playlist urls are rewritten to object urls, so
+            // content plays from any local folder
             initFtgsDrop(document.body, async ({ contentUrl, contentFilename }) => {
                 try {
-                    const handle = await current;
-                    handle.destroy();
-                    // let the old app's gpu teardown settle before creating the next one
-                    await new Promise((r) => setTimeout(r, 100));
+                    welcome.hidden = true;
+                    showError(null);
+                    const handle = current && (await current);
+                    if (handle) {
+                        handle.destroy();
+                        // let the old app's gpu teardown settle before creating the next one
+                        await new Promise((r) => setTimeout(r, 100));
+                    }
                     current = createViewer({
                         ...options,
                         container: document.body,
@@ -156,8 +343,26 @@
                     await current;
                 } catch (err) {
                     console.error('[ftgs-drop] reload failed:', err);
-                    alert('加载失败：' + (err?.message ?? String(err)));
+                    welcome.hidden = false;
+                    showError('加载失败：' + (err?.message ?? String(err)));
                 }
+            });
+
+            // drag-hover affordance, over the welcome screen and a running scene alike
+            let dragDepth = 0;
+            window.addEventListener('dragenter', () => {
+                dragDepth++;
+                document.body.classList.add('dragging');
+            });
+            window.addEventListener('dragleave', () => {
+                if (--dragDepth <= 0) {
+                    dragDepth = 0;
+                    document.body.classList.remove('dragging');
+                }
+            });
+            window.addEventListener('drop', () => {
+                dragDepth = 0;
+                document.body.classList.remove('dragging');
             });
         </script>
     </body>
