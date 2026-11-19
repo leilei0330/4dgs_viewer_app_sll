@@ -21,3 +21,7 @@
 动画播放需要浏览器支持 **WebGPU**（新版 Chrome / Edge / Safari；不支持时静态内容仍可查看）。
 
 本仓库只存放构建产物（由源码仓库的 `scripts/deploy-pages.sh` 自动发布），源码为私有仓库。
+
+---
+
+© 2026 影身智能LeileiSun. Based on [SuperSplat Viewer](https://github.com/playcanvas/supersplat-viewer) (MIT).

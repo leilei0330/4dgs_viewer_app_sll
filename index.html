@@ -122,10 +122,28 @@
                 line-height: 1.8;
                 color: #767e8f;
             }
+            .w-copy {
+                margin-top: 18px;
+                font-size: 12px;
+                color: #565d6b;
+            }
             .w-error {
                 margin-top: 14px;
                 font-size: 13px;
                 color: #ff7b7b;
+            }
+
+            /* attribution, over a running scene */
+            #credit {
+                position: fixed;
+                top: 10px;
+                left: 12px;
+                font-family:
+                    system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.38);
+                pointer-events: none;
+                z-index: 5;
             }
 
             /* drag-hover pill, over the welcome screen and a running scene alike */
@@ -261,6 +279,7 @@
     </head>
     <body>
         <!-- Welcome / empty state, shown when the page opens without a content url -->
+        <div id="credit">© 影身智能LeileiSun</div>
         <div id="welcome" hidden>
             <div class="w-card">
                 <div class="w-title">4DGS <span>Viewer</span></div>
@@ -284,6 +303,7 @@
                     文件仅在你本机的内存中解析，不会上传到任何服务器<br />
                     动画播放需要支持 WebGPU 的浏览器（新版 Chrome / Edge / Safari）
                 </div>
+                <div class="w-copy">© 2026 影身智能LeileiSun</div>
                 <div class="w-error" id="welcomeError" hidden></div>
             </div>
         </div>
